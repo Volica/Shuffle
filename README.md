@@ -1,7 +1,9 @@
 # Shuffle
+
 数据处理实验
 
 ## 题目
+
 Spark Shuffle算法比较
 1. 研究目的：比较Spark中的两种Shuffle算法：基于Hash和基于Sort。
 2. 研究内容：对比分析Spark中基于Hash和基于Sort的两种Shuffle算法的执行流程，探讨它们各自的
@@ -11,12 +13,14 @@ Spark Shuffle算法比较
 性能特征与适用场景。
 
 ## 课程github链接（一些实验说明，需要查看）
+
 https://github.com/dasebigdata/assignment-submission-template
 
-## 时间说明
-12月5号前提交文档、代码
-12月7号提交答辩PPT
-12月8号答辩（每组15分钟：陈述8分钟+提问7分钟）
+## 时间说明  
+
+12月5号前提交文档、代码  
+12月7号提交答辩PPT  
+12月8号答辩（每组15分钟：陈述8分钟+提问7分钟）  
 
 
 
