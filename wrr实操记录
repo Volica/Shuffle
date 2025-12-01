@@ -1,0 +1,143 @@
+## 环境配置
+
+下载WSL2
+wsl --install
+
+注意使用四台服务器
+
+登录实验室服务器（机房网）
+ssh volica@192.168.1.114
+
+登录机房服务器1（正在用）（校园网）
+ssh volica@49.52.27.60
+
+djk服务器
+ssh djk@49.52.27.65
+
+退出服务器
+logout / exit
+
+查看是否连接的通
+ping 49.52.27.65
+
+下载jdk8
+sudo apt install openjdk-8-jdk
+
+sudo update-alternatives --config java
+
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
+下载 SBT 0.13.18
+wget https://github.com/sbt/sbt/releases/download/v0.13.18/sbt-0.13.18.tgz
+
+vim ~/.bashrc
+
+export PATH=/tmp/sbt/bin:$PATH
+
+source ~/.bashrc
+
+下载spark
+wget https://archive.apache.org/dist/spark/spark-1.6.3/spark-1.6.3-bin-hadoop2.6.tgz
+
+tar -xvzf spark-1.6.3-bin-hadoop2.6.tgz
+
+sudo mv spark-1.6.3-bin-hadoop2.6 /tmp/spark
+
+echo "export SPARK_HOME=/tmp/spark" >> ~/.bashrc
+echo "export PATH=$SPARK_HOME/bin:$PATH" >> ~/.bashrc
+echo "export PYSPARK_PYTHON=python3" >> ~/.bashrc
+source ~/.bashrc
+
+spark-submit --version
+
+服务器文件查看：xshell
+
+查看日志：
+ps aux | grep spark
+
+
+## 原代码运行
+
+（大致）修改代码，sbt assembly和spark-submit
+
+cd Documents/shuffle-experiment-sort/
+
+sbt assembly
+
+（本地的）
+spark-submit \
+  --class edu.ecnu.ShuffleExperiment \
+  --master local[4] \
+  --driver-memory 2G \
+  /home/djk/Documents/shuffle-experiment-sort/target/scala-2.10/spark-shuffle-experiment-1.0.0.jar
+
+（原始的）
+spark-submit \
+--class edu.ecnu.ShuffleExperiment \
+--master spark://49.52.27.49:7077 \
+--deploy-mode cluster \
+--executor-memory 1G \
+--driver-memory 512M \
+--executor-cores 2 \
+--conf spark.executor.instances=4 \
+--conf spark.dynamicAllocation.enabled=false \
+--total-executor-cores 8 \
+--conf spark.sql.adaptive.enabled=false \
+--conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
+file:///home/djk/Documents/shuffle-experiment-sort/target/scala-2.10/sparkshuffle-experiment-1.0.0.jar
+
+
+## 汪的修改（版本2）
+
+使用cat > src/main/scala/edu/ecnu/ShuffleExperiment.scala << 'EOF'强制修改代码
+修改了ShuffleExperiment.scala（src/main/scala/edu/ecnu/ShuffleExperiment.scala）
+
+验证修改
+grep groupByKey src/main/scala/edu/ecnu/ShuffleExperiment.scala
+
+重新编译
+sbt assembly
+
+运行 Hash Shuffle 实验 （本地）
+spark-submit \
+  --class edu.ecnu.ShuffleExperiment \
+  --master local[4] \
+  --driver-memory 4G \
+  --conf spark.shuffle.manager=hash \
+  target/scala-2.10/spark-shuffle-experiment-1.0.0.jar hash
+
+运行 Sort Shuffle 实验 （本地）
+spark-submit \
+  --class edu.ecnu.ShuffleExperiment \
+  --master local[4] \
+  --driver-memory 4G \
+  --conf spark.shuffle.manager=sort \
+  target/scala-2.10/spark-shuffle-experiment-1.0.0.jar sort
+
+## 最新运行命令
+
+sort模式
+spark-submit \
+--class edu.ecnu.ShuffleExperiment \
+--master spark://49.52.27.49:7077 \
+--deploy-mode client \
+--driver-memory 2G \
+--executor-memory 2G \
+--executor-cores 2 \
+--conf spark.executor.instances=4 \
+--conf spark.default.parallelism=16 \
+--conf spark.shuffle.manager=sort \
+/home/djk/Documents/shuffle-experiment-sort/target/scala-2.10/spark-shuffle-experiment-1.0.0.jar sort
+
+hash模式
+spark-submit \
+--class edu.ecnu.ShuffleExperiment \
+--master spark://49.52.27.49:7077 \
+--deploy-mode client \
+--driver-memory 2G \
+--executor-memory 2G \
+--executor-cores 2 \
+--conf spark.executor.instances=4 \
+--conf spark.default.parallelism=16 \
+--conf spark.shuffle.manager=hash \
+/home/djk/Documents/shuffle-experiment-sort/target/scala-2.10/spark-shuffle-experiment-1.0.0.jar sort
